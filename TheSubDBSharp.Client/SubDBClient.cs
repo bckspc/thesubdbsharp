@@ -272,6 +272,74 @@
         }
 
         /// <summary>
+        /// Uploads the specified file stream.
+        /// </summary>
+        /// <param name="fileStream">The file stream.</param>
+        /// <param name="fileSize">Size of the file.</param>
+        /// <returns></returns>
+        public SubDBUploadResponse Upload(Stream fileStream, long? fileSize = null)
+        {
+            if (fileStream == null)
+            {
+                throw new ArgumentNullException("File stream must exist", nameof(fileStream));
+            }
+
+            if (!fileStream.CanRead || !fileStream.CanSeek)
+            {
+                throw new ArgumentException("File stream must be readable and seekable", nameof(fileStream));
+            }
+
+            if (fileStream.Length < SubDBHashHelper.HashSize)
+            {
+                throw new ArgumentException(string.Format("File size must be greater than {0} bytes", SubDBHashHelper.HashSize), nameof(fileStream));
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                fileStream.CopyTo(ms);
+                return this.Upload(ms.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Uploads the specified file bytes.
+        /// </summary>
+        /// <param name="fileBytes">The file bytes.</param>
+        /// <returns></returns>
+        public SubDBUploadResponse Upload(byte[] fileBytes)
+        {
+            if(fileBytes == null || fileBytes.Length == 0)
+            {
+                throw new ArgumentException("The file bytes array must be filled", nameof(fileBytes));
+            }
+
+            if(fileBytes.Length < SubDBHashHelper.HashSize)
+            {
+                throw new ArgumentException(string.Format("File size must be greater than {0} bytes", SubDBHashHelper.HashSize), nameof(fileBytes));
+            }
+
+            var request = this.SetupRequest(SubDBAction.Upload);
+            request.Method = Method.POST;
+            request.AddHeader("Content-Type", "multipart/form-data");
+            request.AddParameter("hash", SubDBHashHelper.GetHashFromBytes(fileBytes), null, ParameterType.RequestBody);
+            request.AddFileBytes("file", fileBytes, "subtitle.srt", "application/octet-stream");
+
+            var response = this.ExecuteRequest(request);
+
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.Created:
+                    return SubDBUploadResponse.Uploaded;
+                case HttpStatusCode.Forbidden:
+                    return SubDBUploadResponse.Duplicated;
+                case HttpStatusCode.UnsupportedMediaType:
+                    return SubDBUploadResponse.Invalid;
+                default:
+                    return SubDBUploadResponse.Error;
+            }
+        }
+
+        /// <summary>
         /// Executes the request.
         /// </summary>
         /// <param name="request">The request.</param>

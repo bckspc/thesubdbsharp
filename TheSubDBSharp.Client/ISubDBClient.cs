@@ -61,5 +61,20 @@
         /// <param name="languages">The parameter language can be a single language code (ex.: us), or a comma separated list in order of priority (ex.: us,nl). When using a comma separated list, the first subtitle found is returned.</param>
         /// <returns>The subtitle contents, an empty string if not found and null if an error has occurred</returns>
         string Download(byte[] fileBytes, string languages);
+
+        /// <summary>
+        /// Uploads the specified file stream.
+        /// </summary>
+        /// <param name="fileStream">The file stream.</param>
+        /// <param name="fileSize">Size of the file.</param>
+        /// <returns></returns>
+        SubDBUploadResponse Upload(Stream fileStream, long? fileSize = null);
+
+        /// <summary>
+        /// Uploads the specified file bytes.
+        /// </summary>
+        /// <param name="fileBytes">The file bytes.</param>
+        /// <returns></returns>
+        SubDBUploadResponse Upload(byte[] fileBytes);
     }
 }

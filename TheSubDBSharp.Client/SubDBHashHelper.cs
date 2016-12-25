@@ -33,6 +33,19 @@
         }
 
         /// <summary>
+        /// Gets the hash from bytes.
+        /// </summary>
+        /// <param name="bytes">The bytes.</param>
+        /// <returns>An hash from the specified stream</returns>
+        public static string GetHashFromBytes(byte[] bytes)
+        {
+            using (var ms = new MemoryStream(bytes))
+            {
+                return SubDBHashHelper.GetHashFromStream(ms);
+            }
+        }
+
+        /// <summary>
         /// Gets the hash from stream.
         /// </summary>
         /// <param name="filePath">The file path.</param>
