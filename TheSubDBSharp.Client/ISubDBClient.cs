@@ -43,38 +43,38 @@
         /// </summary>
         /// <param name="hash">The file hash</param>
         /// <param name="languages">The parameter language can be a single language code (ex.: us), or a comma separated list in order of priority (ex.: us,nl). When using a comma separated list, the first subtitle found is returned.</param>
-        /// <returns>The subtitle contents, an empty string if not found and null if an error has occurred</returns>
-        string Download(string hash, string languages);
+        /// <returns>The subtitle contents or null if an error has occurred</returns>
+        SubDBSubtitle Download(string hash, string languages);
 
         /// <summary>
         /// Downloads the specified subtitle.
         /// </summary>
         /// <param name="fileStream">The file stream to hash</param>
         /// <param name="languages">The parameter language can be a single language code (ex.: us), or a comma separated list in order of priority (ex.: us,nl). When using a comma separated list, the first subtitle found is returned.</param>
-        /// <returns>The subtitle contents, an empty string if not found and null if an error has occurred</returns>
-        string Download(Stream fileStream, string languages);
+        /// <returns>The subtitle contents or null if an error has occurred</returns>
+        SubDBSubtitle Download(Stream fileStream, string languages);
 
         /// <summary>
         /// Downloads the specified subtitle.
         /// </summary>
         /// <param name="fileBytes">The file bytes to hash</param>
         /// <param name="languages">The parameter language can be a single language code (ex.: us), or a comma separated list in order of priority (ex.: us,nl). When using a comma separated list, the first subtitle found is returned.</param>
-        /// <returns>The subtitle contents, an empty string if not found and null if an error has occurred</returns>
-        string Download(byte[] fileBytes, string languages);
+        /// <returns>The subtitle contents or null if an error has occurred</returns>
+        SubDBSubtitle Download(byte[] fileBytes, string languages);
 
         /// <summary>
         /// Uploads the specified file stream.
         /// </summary>
         /// <param name="fileStream">The file stream.</param>
         /// <param name="fileSize">Size of the file.</param>
-        /// <returns></returns>
+        /// <returns>The upload result</returns>
         SubDBUploadResponse Upload(Stream fileStream, long? fileSize = null);
 
         /// <summary>
         /// Uploads the specified file bytes.
         /// </summary>
         /// <param name="fileBytes">The file bytes.</param>
-        /// <returns></returns>
+        /// <returns>The upload result</returns>
         SubDBUploadResponse Upload(byte[] fileBytes);
     }
 }

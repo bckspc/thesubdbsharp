@@ -12,7 +12,12 @@
         /// <summary>
         /// The hash size (2 * 64 * 1024) (two chunks of 64kb)
         /// </summary>
-        public const int HashSize = 131072;
+        public const int HashSize = ChunkSize * 2;
+
+        /// <summary>
+        /// The chunk size (64 * 1024) ( chunks of 64kb)
+        /// </summary>
+        public const int ChunkSize = 65536;
 
         /// <summary>
         /// Gets the hash from stream.
@@ -21,11 +26,11 @@
         /// <returns>An hash from the specified stream</returns>
         public static string GetHashFromStream(Stream stream)
         {
-            byte[] buffer = new byte[HashSize * 2];
+            byte[] buffer = new byte[HashSize];
             stream.Seek(0, SeekOrigin.Begin);
-            int bytesRead = stream.Read(buffer, 0, HashSize);
-            stream.Seek(-1 * HashSize, SeekOrigin.End);
-            stream.Read(buffer, bytesRead, HashSize);
+            int bytesRead = stream.Read(buffer, 0, ChunkSize);
+            stream.Seek(-1 * ChunkSize, SeekOrigin.End);
+            stream.Read(buffer, bytesRead, ChunkSize);
 
             MD5 m = MD5.Create();
             byte[] data = m.ComputeHash(buffer);

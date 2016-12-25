@@ -4,6 +4,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Net;
 
     /// <summary>
@@ -65,10 +66,19 @@
         /// <param name="clientUrl">The client URL.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1054:UriParametersShouldNotBeStrings", MessageId = "3#", Justification = "Client url can be an invalid url")]
         public SubDBClient(Uri baseUrl, string clientName, string clientVersion, string clientUrl)
+            : this(new RestClient(baseUrl) { UserAgent = string.Format(UserAgentFormat, protocolName, protocolVersion, clientName, clientVersion, clientUrl) })
         {
-            this.baseUrl = baseUrl;
-            this.userAgent = string.Format(UserAgentFormat, protocolName, protocolVersion, clientName, clientVersion, clientUrl);
-            this.restClient = new Lazy<IRestClient>(() => new RestClient(this.baseUrl) { UserAgent = this.userAgent });
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SubDBClient"/> class.
+        /// </summary>
+        /// <param name="restClient">The rest client.</param>
+        public SubDBClient(IRestClient restClient)
+        {
+            this.restClient = new Lazy<IRestClient>(() => restClient);
+            this.baseUrl = restClient.BaseUrl;
+            this.userAgent = restClient.UserAgent;
         }
 
         /// <summary>
@@ -177,6 +187,11 @@
         /// </returns>
         public IEnumerable<string> Search(byte[] fileBytes, bool returnVersions = false)
         {
+            if (fileBytes == null)
+            {
+                throw new ArgumentNullException("File must exist", nameof(fileBytes));
+            }
+
             using (MemoryStream ms = new MemoryStream(fileBytes))
             {
                 return this.Search(ms, returnVersions);
@@ -188,15 +203,9 @@
         /// </summary>
         /// <param name="hash">The file hash</param>
         /// <param name="languages">The parameter language can be a single language code (ex.: us), or a comma separated list in order of priority (ex.: us,nl). When using a comma separated list, the first subtitle found is returned.</param>
-        /// <returns>
-        /// The subtitle contents, an empty string if not found and null if an error has occurred
-        /// </returns>
-        /// <exception cref="ArgumentException">
-        /// You must search using a valid hash - hash
-        /// or
-        /// At least one language must be provided - languages
-        /// </exception>
-        public string Download(string hash, string languages)
+        /// <returns>The subtitle contents or null if an error has occurred</returns>
+        /// <exception cref="ArgumentException">You must search using a valid hash or At least one language must be provided</exception>
+        public SubDBSubtitle Download(string hash, string languages)
         {
             if (string.IsNullOrWhiteSpace(hash))
             {
@@ -214,12 +223,13 @@
             var response = this.ExecuteRequest(request);
             if (response.StatusCode == HttpStatusCode.OK)
             {
-                return response.Content;
+                var language = response.Headers.SingleOrDefault(x => x.Name == "Content-Language")?.Value?.ToString();
+                return new SubDBSubtitle { Content = response.Content, Language = language };
             }
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                return string.Empty;
+                return new SubDBSubtitle { NotFound = true };
             }
 
             return null;
@@ -230,12 +240,10 @@
         /// </summary>
         /// <param name="fileStream">The file stream to hash</param>
         /// <param name="languages">The parameter language can be a single language code (ex.: us), or a comma separated list in order of priority (ex.: us,nl). When using a comma separated list, the first subtitle found is returned.</param>
-        /// <returns>
-        /// The subtitle contents, an empty string if not found and null if an error has occurred
-        /// </returns>
+        /// <returns>The subtitle contents or null if an error has occurred</returns>
         /// <exception cref="ArgumentNullException">File stream must exist</exception>
         /// <exception cref="ArgumentException">File stream must be readable and seekable</exception>
-        public string Download(Stream fileStream, string languages)
+        public SubDBSubtitle Download(Stream fileStream, string languages)
         {
             if (fileStream == null)
             {
@@ -260,11 +268,15 @@
         /// </summary>
         /// <param name="fileBytes">The file bytes to hash</param>
         /// <param name="languages">The parameter language can be a single language code (ex.: us), or a comma separated list in order of priority (ex.: us,nl). When using a comma separated list, the first subtitle found is returned.</param>
-        /// <returns>
-        /// The subtitle contents, an empty string if not found and null if an error has occurred
-        /// </returns>
-        public string Download(byte[] fileBytes, string languages)
+        /// <returns>The subtitle contents or null if an error has occurred</returns>
+        /// <exception cref="System.ArgumentNullException">File must exist</exception>
+        public SubDBSubtitle Download(byte[] fileBytes, string languages)
         {
+            if (fileBytes == null)
+            {
+                throw new ArgumentNullException("File must exist", nameof(fileBytes));
+            }
+
             using (var ms = new MemoryStream(fileBytes))
             {
                 return this.Download(ms, languages);
@@ -308,12 +320,12 @@
         /// <returns></returns>
         public SubDBUploadResponse Upload(byte[] fileBytes)
         {
-            if(fileBytes == null || fileBytes.Length == 0)
+            if (fileBytes == null || fileBytes.Length == 0)
             {
                 throw new ArgumentException("The file bytes array must be filled", nameof(fileBytes));
             }
 
-            if(fileBytes.Length < SubDBHashHelper.HashSize)
+            if (fileBytes.Length < SubDBHashHelper.HashSize)
             {
                 throw new ArgumentException(string.Format("File size must be greater than {0} bytes", SubDBHashHelper.HashSize), nameof(fileBytes));
             }
