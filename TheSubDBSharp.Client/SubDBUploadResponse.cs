@@ -6,6 +6,11 @@
     public enum SubDBUploadResponse
     {
         /// <summary>
+        /// The none
+        /// </summary>
+        None,
+
+        /// <summary>
         /// The uploaded
         /// </summary>
         Uploaded,
